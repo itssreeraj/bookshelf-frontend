@@ -1,0 +1,8 @@
+{
+  "appId": "com.homelibrary.app",
+  "appName": "Your Library",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

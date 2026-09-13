@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-parchment: #e8dfc8;
+  --color-walnut: #3e2b23;
+  --color-ink: #211f1c;
+  --color-brass: #a6832e;
+  --color-brass-light: #c9a94d;
+  --color-library-green: #2f4739;
+  --color-stamp-red: #8c3b2e;
+
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-body: "Work Sans", "Helvetica Neue", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-parchment);
+  /* faint ledger-paper ruling, not decoration for its own sake */
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(62, 43, 35, 0.015) 0px,
+    rgba(62, 43, 35, 0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
