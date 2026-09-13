@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../lib/api.js';
 import { Field, SelectField } from '../components/FormFields.jsx';
@@ -10,6 +10,7 @@ const BLANK_FORM = {
   title: '',
   subtitle: '',
   authors: '',
+  isbn13: '',
   genre: '',
   subjects: '',
   type: 'physical',
@@ -24,23 +25,27 @@ const BLANK_FORM = {
 
 export default function AddBookPage() {
   const { token } = useAuth();
-  const navigate = useNavigate();
   const [mode, setMode] = useState('isbn'); // 'isbn' | 'manual'
   const [isbn, setIsbn] = useState('');
   const [preview, setPreview] = useState(null);
   const [form, setForm] = useState(BLANK_FORM);
   const [error, setError] = useState(null);
+  const [lookupFailed, setLookupFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [lastAdded, setLastAdded] = useState(null); // { id, title, status }
 
   async function performLookup(isbnValue) {
     setError(null);
+    setLookupFailed(false);
+    setLastAdded(null);
     setBusy(true);
     try {
       const result = await api.lookupIsbn(token, isbnValue);
       setPreview(result);
     } catch (err) {
       setError(err.message);
+      setLookupFailed(true);
       setPreview(null);
     } finally {
       setBusy(false);
@@ -63,7 +68,13 @@ export default function AddBookPage() {
     setError(null);
     try {
       const book = await api.addFromIsbn(token, isbn, status);
-      navigate(`/books/${book.id}`);
+      // Stay on this page instead of navigating away, so scanning/adding a
+      // stack of books in one sitting doesn't require re-opening this tab
+      // every time. A confirmation with a link covers anyone who does want
+      // to jump straight to the new book.
+      setLastAdded({ id: book.id, title: book.title, status: book.status });
+      setPreview(null);
+      setIsbn('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,12 +95,20 @@ export default function AddBookPage() {
         pageCount: form.pageCount ? Number(form.pageCount) : null,
       };
       const book = await api.createBook(token, payload);
-      navigate(`/books/${book.id}`);
+      setLastAdded({ id: book.id, title: book.title, status: book.status });
+      setForm(BLANK_FORM);
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleAddManuallyInstead() {
+    setForm((f) => ({ ...f, isbn13: isbn }));
+    setMode('manual');
+    setError(null);
+    setLookupFailed(false);
   }
 
   function splitList(value) {
@@ -104,15 +123,62 @@ export default function AddBookPage() {
       <h2 className="font-display text-3xl text-walnut mb-6">Add a book</h2>
 
       <div className="flex gap-6 mb-8 border-b border-ink/10">
-        <TabButton active={mode === 'isbn'} onClick={() => setMode('isbn')}>
+        <TabButton
+          active={mode === 'isbn'}
+          onClick={() => {
+            setMode('isbn');
+            setError(null);
+          }}
+        >
           By ISBN
         </TabButton>
-        <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
+        <TabButton
+          active={mode === 'manual'}
+          onClick={() => {
+            setMode('manual');
+            setError(null);
+          }}
+        >
           Enter manually
         </TabButton>
       </div>
 
-      {error && <p className="text-stamp-red mb-4 text-sm">{error}</p>}
+      {lastAdded && (
+        <div className="mb-6 bg-library-green/10 border border-library-green/30 px-4 py-3 flex items-center justify-between text-sm font-body">
+          <span className="text-ink/80">
+            Added <span className="font-display text-walnut">{lastAdded.title}</span> to your{' '}
+            {lastAdded.status === 'wishlist' ? 'wishlist' : 'library'}.
+          </span>
+          <Link to={`/books/${lastAdded.id}`} className="text-library-green underline underline-offset-4 whitespace-nowrap ml-4">
+            View it
+          </Link>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4">
+          <p className="text-stamp-red text-sm">{error}</p>
+          {lookupFailed && mode === 'isbn' && (
+            <p className="text-sm mt-1 space-x-3">
+              <a
+                href={`https://www.google.com/search?q=isbn+${encodeURIComponent(isbn)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brass hover:text-brass-light underline underline-offset-4"
+              >
+                Search Google for this ISBN
+              </a>
+              <button
+                type="button"
+                onClick={handleAddManuallyInstead}
+                className="text-library-green hover:text-brass underline underline-offset-4"
+              >
+                Add it manually instead
+              </button>
+            </p>
+          )}
+        </div>
+      )}
 
       {mode === 'isbn' ? (
         <div>
@@ -180,6 +246,7 @@ export default function AddBookPage() {
             value={form.authors}
             onChange={(v) => setForm((f) => ({ ...f, authors: v }))}
           />
+          <Field label="ISBN" value={form.isbn13} onChange={(v) => setForm((f) => ({ ...f, isbn13: v }))} />
           <div className="grid grid-cols-2 gap-4">
             <Field label="Genre" value={form.genre} onChange={(v) => setForm((f) => ({ ...f, genre: v }))} />
             <Field
