@@ -59,6 +59,35 @@ npm run android:sync        # after every change -- rebuilds and copies into and
 npm run android:open        # opens the android/ folder in Android Studio
 ```
 
+**One manual step after `npm run android:add`:** the ISBN barcode scanner needs camera
+access, but Capacitor's default Android template doesn't request the camera permission
+(it's only added automatically if you use a native camera plugin, which this project
+doesn't -- it scans via the browser's camera API instead). Open
+`android/app/src/main/AndroidManifest.xml` and add this line inside the `<manifest>` tag,
+alongside the existing `<uses-permission android:name="android.permission.INTERNET" />`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+```
+
+Do this once, right after `npm run android:add` creates the folder -- it won't be
+overwritten by future `npm run android:sync` runs (that command only touches the web
+assets, not the manifest).
+
+## Scanning barcodes
+
+The "Add a book" page can look up a book by ISBN two ways: typing it in, or scanning the
+barcode on the back of the book with a camera. Scanning works the same way on the web app
+(webcam) and the Android app (rear camera) since both use the browser's camera API
+(`getUserMedia`) via the `@zxing/browser` library -- there's no separate native code path.
+It only detects EAN-13 codes starting with 978/979 (how ISBNs are encoded), to avoid
+false positives from other barcodes.
+
+Camera access requires a secure context (HTTPS or localhost) -- already true for the
+Vercel deployment, `npm run dev` on localhost, and the Android app (which uses
+`androidScheme: 'https'`), so this should work everywhere without extra configuration
+beyond the manifest permission above.
+
 **Before your first Play Store upload**, change `"appId"` in `capacitor.config.json` from the
 placeholder `com.homelibrary.app` to something you own (reverse-domain form, e.g.
 `com.yourname.library`) — this can't be changed afterward without publishing as a new app.

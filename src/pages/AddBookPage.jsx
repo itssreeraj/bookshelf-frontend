@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../lib/api.js';
 import { Field, SelectField } from '../components/FormFields.jsx';
+import Modal from '../components/Modal.jsx';
+import IsbnScanner from '../components/IsbnScanner.jsx';
 
 const BLANK_FORM = {
   title: '',
@@ -29,13 +31,13 @@ export default function AddBookPage() {
   const [form, setForm] = useState(BLANK_FORM);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
-  async function handleLookup(e) {
-    e.preventDefault();
+  async function performLookup(isbnValue) {
     setError(null);
     setBusy(true);
     try {
-      const result = await api.lookupIsbn(token, isbn);
+      const result = await api.lookupIsbn(token, isbnValue);
       setPreview(result);
     } catch (err) {
       setError(err.message);
@@ -43,6 +45,17 @@ export default function AddBookPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleLookup(e) {
+    e.preventDefault();
+    performLookup(isbn);
+  }
+
+  function handleScanned(scannedIsbn) {
+    setScanning(false);
+    setIsbn(scannedIsbn);
+    performLookup(scannedIsbn);
   }
 
   async function handleConfirmFromIsbn(status) {
@@ -103,11 +116,11 @@ export default function AddBookPage() {
 
       {mode === 'isbn' ? (
         <div>
-          <form onSubmit={handleLookup} className="flex gap-3 mb-6">
+          <form onSubmit={handleLookup} className="flex gap-3 mb-3">
             <input
               value={isbn}
               onChange={(e) => setIsbn(e.target.value)}
-              placeholder="Scan or type an ISBN"
+              placeholder="Type an ISBN"
               className="flex-1 bg-transparent border-b border-ink/30 focus:border-brass outline-none px-1 py-2 font-body"
               required
             />
@@ -119,6 +132,18 @@ export default function AddBookPage() {
               Look up
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={() => setScanning(true)}
+            className="mb-6 text-sm text-brass hover:text-brass-light underline underline-offset-4"
+          >
+            Or scan the barcode with your camera
+          </button>
+
+          <Modal open={scanning} onClose={() => setScanning(false)} title="Scan a barcode">
+            {scanning && <IsbnScanner onDetected={handleScanned} onClose={() => setScanning(false)} />}
+          </Modal>
 
           {preview && (
             <div className="bg-parchment border border-ink/20 p-6 relative">
