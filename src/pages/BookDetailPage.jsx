@@ -93,6 +93,7 @@ export default function BookDetailPage() {
               <Detail label="Type" value={book.type} />
               <Detail label="Status" value={book.status} />
               <Detail label="Condition" value={book.condition} />
+              <Detail label="ISBN" value={book.isbn13 || book.isbn10} />
               <Detail label="Publisher" value={book.publisher} />
               <Detail label="Published" value={book.publicationYear} />
               <Detail label="Pages" value={book.pageCount} />
