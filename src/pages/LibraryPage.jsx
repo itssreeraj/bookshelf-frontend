@@ -91,7 +91,7 @@ export default function LibraryPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({ genre: '', language: '', author: '' });
+  const [filters, setFilters] = useState({ title: '', genre: '', language: '', author: '' });
   const [groupBy, setGroupBy] = useState('genre');
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function LibraryPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, filters.genre, filters.language, filters.author]);
+  }, [token, filters.title, filters.genre, filters.language, filters.author]);
 
   const shelves = useMemo(() => groupBooks(books, groupBy), [books, groupBy]);
 
@@ -125,6 +125,11 @@ export default function LibraryPage() {
       </header>
 
       <div className="flex flex-wrap gap-6 mb-6">
+        <FilterInput
+          placeholder="Filter by title"
+          value={filters.title}
+          onChange={(v) => setFilters((f) => ({ ...f, title: v }))}
+        />
         <FilterInput
           placeholder="Filter by genre"
           value={filters.genre}

@@ -34,6 +34,8 @@ export default function AddBookPage() {
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [lastAdded, setLastAdded] = useState(null); // { id, title, status }
+  const [duplicate, setDuplicate] = useState(null); // the existing Book, when one is found
+  const [pendingAction, setPendingAction] = useState(null); // () => void, runs on "Add anyway"
 
   async function performLookup(isbnValue) {
     setError(null);
@@ -63,7 +65,7 @@ export default function AddBookPage() {
     performLookup(scannedIsbn);
   }
 
-  async function handleConfirmFromIsbn(status) {
+  async function addFromIsbnNow(status) {
     setBusy(true);
     setError(null);
     try {
@@ -82,8 +84,25 @@ export default function AddBookPage() {
     }
   }
 
-  async function handleManualSubmit(e) {
-    e.preventDefault();
+  async function handleConfirmFromIsbn(status) {
+    setBusy(true);
+    setError(null);
+    try {
+      const existing = await api.checkIsbnExists(token, isbn);
+      setBusy(false);
+      if (existing) {
+        setDuplicate(existing);
+        setPendingAction(() => () => addFromIsbnNow(status));
+        return;
+      }
+      await addFromIsbnNow(status);
+    } catch (err) {
+      setBusy(false);
+      setError(err.message);
+    }
+  }
+
+  async function submitManualNow() {
     setBusy(true);
     setError(null);
     try {
@@ -104,11 +123,47 @@ export default function AddBookPage() {
     }
   }
 
+  async function handleManualSubmit(e) {
+    e.preventDefault();
+    const isbnValue = form.isbn13.trim();
+    if (!isbnValue) {
+      submitManualNow();
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const existing = await api.checkIsbnExists(token, isbnValue);
+      setBusy(false);
+      if (existing) {
+        setDuplicate(existing);
+        setPendingAction(() => () => submitManualNow());
+        return;
+      }
+      await submitManualNow();
+    } catch (err) {
+      setBusy(false);
+      setError(err.message);
+    }
+  }
+
   function handleAddManuallyInstead() {
     setForm((f) => ({ ...f, isbn13: isbn }));
     setMode('manual');
     setError(null);
     setLookupFailed(false);
+  }
+
+  function confirmDuplicateAnyway() {
+    const action = pendingAction;
+    setDuplicate(null);
+    setPendingAction(null);
+    action?.();
+  }
+
+  function cancelDuplicate() {
+    setDuplicate(null);
+    setPendingAction(null);
   }
 
   function splitList(value) {
@@ -154,6 +209,43 @@ export default function AddBookPage() {
           </Link>
         </div>
       )}
+
+      <Modal open={!!duplicate} onClose={cancelDuplicate} title="You already have this book">
+        {duplicate && (
+          <div>
+            <p className="text-sm text-ink/70 mb-4">
+              A book with this ISBN is already in your {duplicate.status === 'wishlist' ? 'wishlist' : 'library'}:
+            </p>
+            <div className="bg-parchment border border-ink/20 p-4 relative mb-4">
+              <div className="absolute top-2 left-4 right-4 h-px bg-stamp-red/40" />
+              <h4 className="font-display text-lg text-walnut mt-2">{duplicate.title}</h4>
+              {duplicate.authors?.length > 0 && <p className="text-sm text-ink/70 mt-1">{duplicate.authors.join(', ')}</p>}
+              <p className="text-xs text-ink/40 mt-2">
+                {duplicate.status === 'wishlist' ? 'On your wishlist' : 'In your library'}
+                {duplicate.shelfLocation ? ` — ${duplicate.shelfLocation}` : ''}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={confirmDuplicateAnyway}
+                disabled={busy}
+                className="bg-walnut text-parchment px-4 py-2 font-body text-sm disabled:opacity-50"
+              >
+                Add it anyway
+              </button>
+              <button onClick={cancelDuplicate} className="px-4 py-2 font-body text-sm text-ink/60 hover:text-ink">
+                Cancel
+              </button>
+              <Link
+                to={`/books/${duplicate.id}`}
+                className="text-sm text-library-green underline underline-offset-4"
+              >
+                View existing
+              </Link>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {error && (
         <div className="mb-4">

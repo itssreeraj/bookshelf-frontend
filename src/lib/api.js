@@ -42,6 +42,10 @@ export const api = {
 
   getBook: (token, id) => request(`/api/books/${id}`, { token }),
 
+  // Returns the existing book if this user already has one with this ISBN,
+  // or null (the backend returns 204 with no body, which request() maps to null).
+  checkIsbnExists: (token, isbn) => request(`/api/books/check-isbn/${encodeURIComponent(isbn)}`, { token }),
+
   createBook: (token, data) => request('/api/books', { method: 'POST', token, body: data }),
 
   updateBook: (token, id, data) => request(`/api/books/${id}`, { method: 'PUT', token, body: data }),
