@@ -64,4 +64,7 @@ export const api = {
 
   runResearch: (token, id, forceRefresh = false) =>
     request(`/api/books/${id}/research${query({ forceRefresh })}`, { method: 'POST', token }),
+
+  getRecommendations: (token, queryText) =>
+    request('/api/recommendations', { method: 'POST', token, body: { query: queryText } }),
 };

@@ -91,7 +91,7 @@ export default function LibraryPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({ title: '', genre: '', language: '', author: '' });
+  const [filters, setFilters] = useState({ title: '', genre: '', language: '', author: '', publisher: '' });
   const [groupBy, setGroupBy] = useState('genre');
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function LibraryPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, filters.title, filters.genre, filters.language, filters.author]);
+  }, [token, filters.title, filters.genre, filters.language, filters.author, filters.publisher]);
 
   const shelves = useMemo(() => groupBooks(books, groupBy), [books, groupBy]);
 
@@ -144,6 +144,11 @@ export default function LibraryPage() {
           placeholder="Filter by author"
           value={filters.author}
           onChange={(v) => setFilters((f) => ({ ...f, author: v }))}
+        />
+        <FilterInput
+          placeholder="Filter by publisher"
+          value={filters.publisher}
+          onChange={(v) => setFilters((f) => ({ ...f, publisher: v }))}
         />
       </div>
 

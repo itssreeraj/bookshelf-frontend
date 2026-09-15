@@ -5,6 +5,7 @@ const links = [
   { to: '/', label: 'The library', end: true },
   { to: '/wishlist', label: 'Wishlist' },
   { to: '/add', label: 'Add a book' },
+  { to: '/ask', label: 'Ask the librarian' },
 ];
 
 export default function DrawerNav() {

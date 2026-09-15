@@ -8,6 +8,7 @@ import LibraryPage from './pages/LibraryPage.jsx';
 import WishlistPage from './pages/WishlistPage.jsx';
 import BookDetailPage from './pages/BookDetailPage.jsx';
 import AddBookPage from './pages/AddBookPage.jsx';
+import AskLibrarianPage from './pages/AskLibrarianPage.jsx';
 
 function AppShell({ children }) {
   return (
@@ -51,6 +52,16 @@ export default function App() {
               <ProtectedRoute>
                 <AppShell>
                   <AddBookPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ask"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <AskLibrarianPage />
                 </AppShell>
               </ProtectedRoute>
             }
