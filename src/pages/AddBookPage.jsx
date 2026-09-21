@@ -308,7 +308,17 @@ export default function AddBookPage() {
               <div className="absolute top-3 left-6 right-6 h-px bg-stamp-red/40" />
               <h3 className="font-display text-xl text-walnut mt-3">{preview.title}</h3>
               {preview.authors?.length > 0 && <p className="text-ink/70 mt-1">{preview.authors.join(', ')}</p>}
-              <p className="text-xs text-ink/40 mt-3">Found via {preview.source}</p>
+              {preview.source?.includes('unverified') ? (
+                <div className="mt-3 border border-stamp-red/50 bg-stamp-red/5 px-3 py-2">
+                  <p className="text-xs text-stamp-red font-semibold">AI-suggested, unverified</p>
+                  <p className="text-xs text-ink/60 mt-1">
+                    We couldn't confirm this against Google Books or Open Library. Double-check the
+                    title, author, and details before adding.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-ink/40 mt-3">Found via {preview.source}</p>
+              )}
 
               <div className="flex gap-3 mt-6">
                 <button
